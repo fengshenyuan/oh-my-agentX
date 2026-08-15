@@ -181,21 +181,6 @@ Chat
 
 The shell should consume structured runtime events rather than scraping terminal text.
 
-For example:
-
-```json
-{
-  "type": "tool.call",
-  "id": "call_123",
-  "tool": "github.search",
-  "input": {
-    "query": "..."
-  }
-}
-```
-
-A TUI, IDE, and Web client can render that event differently while consuming the same semantic protocol.
-
 ## 3. Configuration is not state
 
 One important refinement is that configuration and dynamic state should not be conflated.
@@ -219,7 +204,6 @@ working memory
 task progress
 tool results
 background jobs
-session history
 learned memory
 ```
 
@@ -394,9 +378,86 @@ The project is ultimately investigating whether this is possible:
 
 The desired property is:
 
-> Define the agent once; run it on different runtimes; interact with it through different clients.
+> **Define the agent once; run it on different runtimes; interact with it through different clients.**
 
-## 9. What not to build first
+## 9. From Runtime Portability to Agent Lifecycle
+
+The three-layer model exposes another missing concern when an agent is expected to live beyond a single interaction.
+
+A long-lived agent needs to be created, provisioned, deployed, awakened, observed, recovered, evaluated, updated, governed, and retired. Scheduling is only one possible trigger in this lifecycle.
+
+This motivates a fourth architectural perspective, above an individual runtime:
+
+```text
+                         Agent OS
+                            │
+             ┌──────────────┼──────────────┐
+             ▼              ▼              ▼
+          Create          Deploy         Operate
+             │              │              │
+        Agent Spec       Runtime        Observe
+        Skills           Sandbox        Evaluate
+        Identity         State          Recover
+        Policies         Memory         Update
+        Tools            Schedule        Govern
+        Capabilities     Events          Cost
+             │              │              │
+             └──────────────┼──────────────┘
+                            ▼
+                     Long-lived Agent
+```
+
+This is not intended to assert that an "Agent OS" is already a standard product category. It is a research hypothesis for the next layer of abstraction.
+
+### Runtime vs Management Plane
+
+It is useful to distinguish:
+
+```text
+Harness / Runtime
+    How is the agent composed and executed?
+
+Agent Management Plane
+    How is the agent created, deployed, observed, recovered,
+    evaluated, updated, governed, and retired across time?
+```
+
+The management plane may eventually need primitives for:
+
+```text
+identity
+specification
+provisioning
+deployment
+scheduling
+subscriptions / event triggers
+permissions
+policy
+audit
+observability
+evaluation
+recovery
+versioning
+rollout / rollback
+cost controls
+retirement
+```
+
+This resembles the role that management/control planes play in conventional infrastructure. It is possible that an equivalent layer for long-lived agents will become an important infrastructure category, but that remains an open hypothesis.
+
+### Why this matters to portability
+
+The original portability question was:
+
+> Can the same agent definition run on different runtimes?
+
+The lifecycle perspective expands it to:
+
+> **Can an agent preserve its identity, definition, state, policy, and behavioral continuity while moving between runtimes and operating for long periods?**
+
+This suggests that a future oh-my-agentX architecture may need not only an **Agent Definition + Runtime Interface**, but also a **Lifecycle / Management Interface**.
+
+## 10. What not to build first
 
 Do not start by implementing every possible resource:
 
@@ -409,6 +470,7 @@ cron
 soul
 auth
 services
+lifecycle management
 etc.
 ```
 
@@ -422,10 +484,11 @@ A better first experiment is:
 4. portable tools/services declarations
 5. one common event model
 6. two or more runtime adapters
+7. a minimal lifecycle model for create/run/suspend/resume/update
 
 The point is to discover the true common denominator.
 
-## 10. Position relative to the existing ecosystem
+## 11. Position relative to the existing ecosystem
 
 The ecosystem is already standardizing pieces:
 
@@ -444,19 +507,30 @@ Agent package managers
 
 Agent harnesses
     → runtime implementations
+
+Agent management / lifecycle systems
+    → still an open and fragmented space
 ```
 
-oh-my-agentX is interested in the missing connections between these pieces.
+oh-my-agentX is interested in the missing connections between these pieces, including whether runtime portability and lifecycle portability can be expressed through interoperable contracts.
 
-## 11. The central question
+## 12. The central question
 
-The project can be reduced to one question:
+The project can be reduced to two related questions:
 
 > **Why should an agent belong to its harness?**
 
-If the answer is "it shouldn't", then the next question is:
+and, for long-lived agents:
 
-> What is the minimum portable representation of an agent, and what contract must a runtime implement to execute it faithfully?
+> **Why should an agent's lifecycle belong to one runtime implementation?**
 
-That is the research problem.
+If the answer to both is "it shouldn't", then the next questions are:
+
+> What is the minimum portable representation of an agent?
+
+> What contract must a runtime implement to execute it faithfully?
+
+> What contract must a management plane implement to create and operate it over time?
+
+That is the evolving research problem.
 
