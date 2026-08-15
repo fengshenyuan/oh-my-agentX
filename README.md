@@ -8,6 +8,8 @@ The project started from a practical problem—having to duplicate the same agen
 
 > **What should be standardized so that an agent can survive changes of runtime, client, and time?**
 
+The original problem and the first-generation architecture are preserved in [Initial Idea](docs/init_idea.md). The current README describes the latest architectural hypothesis; historical reasoning should remain part of the project rather than being recoverable only from Git history.
+
 ---
 
 ## Core thesis
@@ -383,9 +385,12 @@ The next experiment is harder:
 
 ---
 
-## Current research documents
+## Research history and current documents
 
-- [Vision and architecture](docs/vision.md)
+The project intentionally keeps both its current model and the reasoning that produced it.
+
+- [Initial idea and first-generation architecture](docs/init_idea.md)
+- [Current vision and architecture](docs/vision.md)
 - [DeepSeek Harness observations](docs/deepseek-harness.md)
 - [Agent Lifecycle and Management Plane](docs/agent-lifecycle.md)
 
