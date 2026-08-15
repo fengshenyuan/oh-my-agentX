@@ -134,6 +134,67 @@ DeepSeek gives us an important real-world runtime to study and potentially targe
 
 See [DeepSeek Harness observations](docs/deepseek-harness.md) and the [Cordis paper](https://github.com/cordiverse/paper).
 
+## Emerging insight: Agent Lifecycle / Management Plane
+
+Our recent work suggests that the original three-layer model is still missing one important dimension: **how an agent exists and evolves over time**.
+
+A long-lived agent needs more than an execution loop. It needs to be created, assigned an identity, provisioned with capabilities, deployed, awakened by schedules or external events, observed, recovered, evaluated, updated, governed, and eventually retired.
+
+This motivates an emerging **Agent OS** hypothesis:
+
+```text
+                         Agent OS
+                            │
+             ┌──────────────┼──────────────┐
+             ▼              ▼              ▼
+          Create          Deploy         Operate
+             │              │              │
+        Agent Spec       Runtime        Observe
+        Skills           Sandbox        Evaluate
+        Identity         State          Recover
+        Policies         Memory         Update
+        Tools            Schedule        Govern
+        Capabilities     Events          Cost
+             │              │              │
+             └──────────────┼──────────────┘
+                            ▼
+                     Long-lived Agent
+```
+
+This separates two questions that can otherwise be conflated:
+
+```text
+Harness / Runtime
+    → How is an agent composed and executed?
+
+Agent Lifecycle / Management Plane
+    → How does an agent exist, operate, and evolve across time?
+```
+
+A useful analogy is the **management plane** found in conventional infrastructure: not just running workloads, but managing identity, deployment, policy, observability, recovery, versioning, cost, and retirement across a fleet.
+
+One of the open questions for this project is whether this missing layer could become an **Agent Management Plane** analogous in role—not in implementation—to the way Kubernetes, Vercel, or Datadog became important control surfaces for conventional software.
+
+A scheduled task is only one trigger in this larger system:
+
+```text
+Schedule / Webhook / Email / Calendar / Price change / GitHub event / User message
+                                  │
+                                  ▼
+                             Wake Agent
+                                  │
+                                  ▼
+                            Runtime + State
+                                  │
+                           Observe / Decide
+                                  │
+                       ┌──────────┴──────────┐
+                       ▼                     ▼
+                     Act                  Notify
+```
+
+See [Agent Lifecycle and Management Plane](docs/agent-lifecycle.md) for the current research hypothesis and open questions.
+
 ## What we believe today
 
 These are hypotheses, not standards:
@@ -145,6 +206,8 @@ These are hypotheses, not standards:
 5. **The runtime should not dictate the agent philosophy.** A model-driven loop, human-programmed workflow, state machine, planner/executor architecture, or hybrid design should all be possible.
 6. **Portability should be layered.** It may be possible to standardize an agent definition without standardizing every runtime implementation detail.
 7. **We should not reinvent standards that are already emerging.** `AGENTS.md`, Agent Skills, MCP, and related work should be reused or integrated where appropriate.
+8. **Long-lived agents need a lifecycle contract.** Creation, identity, provisioning, deployment, scheduling, observation, recovery, evaluation, update, governance, and retirement are distinct concerns from the moment-to-moment agent loop.
+9. **A management plane may be as important as a runtime ABI.** The long-term interoperability problem may therefore involve both how an agent executes and how its lifecycle is controlled across runtimes.
 
 ## What this repository is for
 
@@ -158,6 +221,7 @@ We will use the repository to:
 - prototype portable agent definitions
 - build small adapters and interoperability experiments
 - identify where a true runtime interface is feasible
+- investigate whether a lifecycle / management interface is also feasible
 - challenge our own assumptions before attempting a formal specification
 
 The first implementation should be small enough to be useful personally. The architecture can grow only when experiments demonstrate that the abstraction is real.
@@ -166,6 +230,7 @@ The first implementation should be small enough to be useful personally. The arc
 
 - [Vision and architecture](docs/vision.md)
 - [DeepSeek Harness observations](docs/deepseek-harness.md)
+- [Agent Lifecycle and Management Plane](docs/agent-lifecycle.md)
 
 ## Status
 
