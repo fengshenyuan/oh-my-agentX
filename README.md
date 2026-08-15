@@ -1,230 +1,387 @@
 # oh-my-agentX
 
-> One agent, any harness.
+> **One agent, any harness.**
 
-**oh-my-agentX** is a personal research project exploring how AI agents can become portable and interoperable across agent clients and runtimes such as Codex, Claude Code, OpenCode, Pi, and future harnesses.
+**oh-my-agentX** is an open research project exploring a portable architecture for **long-lived AI agents**: how an agent can be defined independently of a particular harness, executed by different runtimes, and managed across its full lifecycle.
 
-The project started from a simple personal annoyance:
+The project started from a practical problem—having to duplicate the same agent identity, instructions, skills, knowledge, preferences, and tools across Codex, Claude Code, OpenCode, Pi, and other clients—but has evolved into a broader architectural question:
 
-> Why do I have to maintain the same agent identity, instructions, skills, knowledge, preferences, and other configuration separately for every agent client I use?
+> **What should be standardized so that an agent can survive changes of runtime, client, and time?**
 
-The bigger question behind that annoyance is much more ambitious:
+---
 
-> **Can an agent be defined independently from the runtime that executes it and the client that presents it to the user?**
+## Core thesis
 
-This repository is where we explore that question by thinking big and stepping small.
-
-## The initial idea
-
-The working architecture has three major layers:
+Our current hypothesis is that a useful Agent OS needs **three distinct layers** connected by two different contracts:
 
 ```text
-                 Agent Definition
-                       │
-              "What is this agent?"
-                       │
-                       ▼
-              Harness / Runtime
-                       │
-               "How does it run?"
-                       │
-                       ▼
-                 Shell / Client
-                       │
-                "How is it used?"
+┌─────────────────────────────────────────────────────┐
+│              Agent Management Plane                 │
+│                                                     │
+│  Create · Identity · Deploy · Schedule              │
+│  Observe · Evaluate · Recover · Update              │
+│  Govern · Cost · Retire                             │
+└──────────────────────────┬──────────────────────────┘
+                           │
+                   Lifecycle Contract
+                           │
+┌──────────────────────────▼──────────────────────────┐
+│                    Agent Runtime                    │
+│                                                     │
+│  Model · Context · Loop · Tools · Sandbox           │
+│  State · Events · Capabilities                      │
+└──────────────────────────┬──────────────────────────┘
+                           │
+                      Runtime ABI
+                           │
+┌──────────────────────────▼──────────────────────────┐
+│                  Agent Definition                   │
+│                                                     │
+│  Identity · Skills · Instructions · Tools           │
+│  Policies · Knowledge · Preferences                 │
+└─────────────────────────────────────────────────────┘
 ```
 
-### 1. Agent Definition
+This is the **current canonical architecture of oh-my-agentX**. It is a research hypothesis, not an established industry standard.
 
-A portable, client-neutral representation of an agent. It may eventually cover:
+### 1. Agent Definition — *What is the agent?*
 
-- identity, soul, and personal preferences
-- `AGENTS.md`-style instructions and guidelines
+A portable, client- and runtime-neutral description of an agent.
+
+Potentially includes:
+
+- identity and persistent principles
+- instructions and guidelines
 - skills
 - knowledge and references
-- memory and persistent state
-- tools and services
-- hooks and scripts
-- tasks and scheduled jobs
-- mindsets and operating modes
+- tools and service requirements
+- policies and permissions
+- preferences and operating modes
 - model preferences
-- authentication bindings and permissions
+- authentication bindings
 
-The important principle is **single source of truth**: a user should not have to copy the same skills or agent instructions into `.claude/`, `.codex/`, OpenCode, Pi, and other client-specific directories.
+The goal is a **single source of truth** rather than separate copies in `.claude/`, `.codex/`, OpenCode, Pi, and other runtime-specific directories.
 
-### 2. Harness / Runtime
+### 2. Agent Runtime — *How does the agent execute?*
 
-The execution layer between an agent definition and an LLM. It owns the agent loop and the mechanisms around it:
+The execution substrate between an agent definition and the underlying model and environment.
 
-- model invocation
+A runtime may own:
+
+- model adapters
 - context construction
-- tool calling and execution
-- hooks and lifecycle
-- permissions and sandboxing
+- agent loop
+- tool registration and execution
+- sandbox and filesystem access
+- permissions and approvals
 - session and state management
 - subagents and orchestration
 - event streams
-- capability discovery / negotiation
+- capability discovery and negotiation
+- background execution
 
-The runtime is **not** the model API. A model API describes how to call intelligence; the runtime also defines how an agent lives, acts, observes, persists state, and exposes structured events to a client.
+The runtime is **not** the model API. A model API exposes intelligence; a runtime determines how an agent observes, reasons, acts, persists state, and interacts with its environment.
 
-A central hypothesis of this project is that a future ecosystem may benefit from a **runtime interface / ABI** so that multiple runtimes can execute the same agent definition.
+The key research question here is the **Runtime ABI**:
 
-### 3. Shell / Client
+> What is the smallest stable contract that lets the same agent definition execute faithfully on substantially different runtimes?
 
-The human-facing interaction layer: CLI, TUI, IDE, Web UI, mobile UI, voice UI, and others.
+### 3. Agent Management Plane — *How does the agent exist and evolve?*
 
-The client should translate user actions into standardized runtime input and render structured runtime events correctly rather than depending on a particular runtime's internal output format.
+A long-lived agent needs more than an execution loop. It may exist for days, weeks, or indefinitely and therefore needs lifecycle management.
 
-## Why this matters
+The management plane may own:
 
-Today the ecosystem is becoming increasingly modular, but the boundaries are still fragmented. Standards and projects such as `AGENTS.md`, Agent Skills, MCP, agent package managers, and agent harnesses each solve important pieces.
+- creation and provisioning
+- identity and ownership
+- deployment and placement
+- schedules and event subscriptions
+- permissions and governance
+- observability
+- continuous evaluation
+- failure detection and recovery
+- versioning, rollout, and rollback
+- cost controls
+- retirement
 
-The long-term question for oh-my-agentX is whether these pieces can compose into a portable agent model:
+The key research question here is the **Lifecycle Contract**:
+
+> What contract lets an agent's identity, specification, state, policy, and lifecycle remain coherent across time and potentially across different runtimes?
+
+---
+
+## Why the third layer matters
+
+A scheduled task is easy to mistake for the whole problem:
 
 ```text
-                         Agent
-                           │
-                 ┌─────────▼─────────┐
-                 │  Agent Definition │
-                 │ skills / memory /  │
-                 │ identity / tools / │
-                 │ knowledge / etc.   │
-                 └─────────┬─────────┘
-                           │
-                    Runtime Interface
-                           │
-             ┌─────────────┼─────────────┐
-             ▼             ▼             ▼
-          Runtime A     Runtime B     Runtime C
-          (dsh/Cordis)      Pi        OpenCode
-             │             │             │
-             └─────────────┼─────────────┘
-                           │
-                    Client Interface
-                           │
-                  ┌────────┼────────┐
-                  ▼        ▼        ▼
-                 TUI      IDE      Web
+cron → prompt → model → notification
 ```
 
-The goal is **not** to build another monolithic coding agent. The goal is to investigate the boundaries that would allow different agents, runtimes, and shells to interoperate.
+We think this is only one small mechanism inside a much larger system.
 
-## A major observation: DeepSeek Harness
+A long-lived agent can be awakened by many kinds of events:
 
-On 2026-08-13, DeepSeek released [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), an open-source TypeScript agent harness built on [Cordis](https://github.com/cordiverse/cordis). Its core architectural claim is:
+```text
+Schedule
+Webhook
+Email
+Calendar event
+Price change
+GitHub event
+Database event
+User message
+Timer
+             │
+             ▼
+        Wake Agent
+             │
+             ▼
+      Runtime + State
+             │
+        Observe / Decide
+        ┌────┴────┐
+        ▼         ▼
+       Act      Ignore
+        │
+        ▼
+     Observe
+        │
+        ▼
+   Continue / Notify
+```
+
+The interesting primitive is therefore not **"scheduled prompt"**, but:
+
+> **persistent observation + durable state + event-driven activation + policy-controlled action**
+
+Even notification is a decision problem. An agent may observe hundreds of changes and decide that almost all of them should be silently recorded rather than shown to the user.
+
+```text
+100 observations
+       ↓
+state comparison + reasoning + policy
+       ↓
+97 ignored
+2 recorded silently
+1 user notification
+```
+
+This motivates the idea of an explicit **attention / notification policy** as part of future agent systems.
+
+---
+
+## From portable configuration to an Agent OS
+
+The original motivation for oh-my-agentX was configuration portability:
+
+```text
+One agent definition
+        │
+        ├── Codex
+        ├── Claude Code
+        ├── OpenCode
+        └── Pi
+```
+
+That remains important, but it is only the bottom of the architecture.
+
+The broader model is now:
+
+```text
+                       Agent OS
+                          │
+        ┌─────────────────┼─────────────────┐
+        ▼                 ▼                 ▼
+   Agent Definition   Management Plane   Client / Shell
+        │                 │                 │
+        │             lifecycle control     │
+        │                 │                 │
+        └──────────────┬──┴──┬──────────────┘
+                       ▼     ▼
+                  Runtime A  Runtime B ...
+                       │     │
+                       ▼     ▼
+                  Environment / Sandbox
+```
+
+The client remains an important presentation and interaction layer, but it is not the definition of the agent. A CLI, TUI, IDE, web UI, mobile UI, or voice interface should be able to interact with the same underlying agent through structured runtime events.
+
+---
+
+## Agent Definition, Agent State, Lifecycle State
+
+One of the project's current hypotheses is that these three concepts should not be conflated:
+
+```text
+Agent Definition
+    identity
+    instructions
+    skills
+    tools
+    policies
+    preferences
+
+Agent State
+    sessions
+    memory
+    task progress
+    tool results
+    learned state
+
+Lifecycle State
+    created
+    provisioned
+    running
+    suspended
+    recovering
+    updating
+    degraded
+    retired
+```
+
+This distinction matters for portability. A runtime change should not necessarily require redefining the agent, and an upgrade should not necessarily destroy useful state.
+
+---
+
+## DeepSeek Harness changed the research direction
+
+The release of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) in August 2026 provided an important concrete reference implementation for the runtime layer.
+
+Its central architectural principle is:
 
 > **Everything is a plugin.**
 
-DeepSeek's architecture makes the model adapter, tool registry, session log, agent loop, and other runtime pieces replaceable through a plugin/context/event system. Its architecture documentation describes a shared Cordis context, typed events, reversible effects, profiles, bundles, capability seams, durable session events, and the turn/step lifecycle.
+DeepSeek's runtime makes model adapters, tool registry, session log, agent loop, and other pieces replaceable through a plugin/context/event system. Its architecture also introduces typed events, durable session history, profiles, bundles, capability seams, and lifecycle-oriented execution primitives.
 
-This is highly relevant to oh-my-agentX because it is a concrete, serious implementation of much of the **Harness / Runtime** layer we had been theorizing about.
+This matters to oh-my-agentX because it gives us a serious open runtime to study rather than leaving the runtime layer entirely hypothetical.
 
-However, an important distinction remains:
+But the boundary is important:
 
 ```text
 DeepSeek Harness / Cordis
-    solves composability WITHIN a runtime
+    → composability WITHIN a runtime
 
 oh-my-agentX
-    investigates interoperability ACROSS runtimes
+    → interoperability ACROSS runtimes
+      + lifecycle management ACROSS time
 ```
 
-DeepSeek gives us an important real-world runtime to study and potentially target; it does not by itself define a neutral agent package or a cross-runtime ABI.
+DeepSeek Harness therefore does not remove the portability problem. Instead, it makes the runtime boundary more concrete and strengthens the case for asking what belongs above that boundary.
 
-See [DeepSeek Harness observations](docs/deepseek-harness.md) and the [Cordis paper](https://github.com/cordiverse/paper).
+See [DeepSeek Harness observations](docs/deepseek-harness.md).
 
-## Emerging insight: Agent Lifecycle / Management Plane
+---
 
-Our recent work suggests that the original three-layer model is still missing one important dimension: **how an agent exists and evolves over time**.
+## What the two contracts mean
 
-A long-lived agent needs more than an execution loop. It needs to be created, assigned an identity, provisioned with capabilities, deployed, awakened by schedules or external events, observed, recovered, evaluated, updated, governed, and eventually retired.
+### Runtime ABI
 
-This motivates an emerging **Agent OS** hypothesis:
+The Runtime ABI is the proposed boundary between **Agent Definition** and **Agent Runtime**.
+
+It should eventually describe things such as:
 
 ```text
-                         Agent OS
-                            │
-             ┌──────────────┼──────────────┐
-             ▼              ▼              ▼
-          Create          Deploy         Operate
-             │              │              │
-        Agent Spec       Runtime        Observe
-        Skills           Sandbox        Evaluate
-        Identity         State          Recover
-        Policies         Memory         Update
-        Tools            Schedule        Govern
-        Capabilities     Events          Cost
-             │              │              │
-             └──────────────┼──────────────┘
-                            ▼
-                     Long-lived Agent
+agent loading
+capability negotiation
+session inputs
+semantic runtime events
+tool invocation
+state access
+permissions
+completion / failure
 ```
 
-This separates two questions that can otherwise be conflated:
+The goal is not to standardize every runtime implementation detail. It is to identify the smallest useful common denominator.
+
+### Lifecycle Contract
+
+The Lifecycle Contract is the proposed boundary between **Agent Runtime** and **Agent Management Plane**.
+
+It may eventually describe:
 
 ```text
-Harness / Runtime
-    → How is an agent composed and executed?
-
-Agent Lifecycle / Management Plane
-    → How does an agent exist, operate, and evolve across time?
+create / provision
+identity / ownership
+deploy / suspend / resume
+schedule / event subscriptions
+observe / evaluate
+recover / restart
+upgrade / rollback
+policy / governance
+cost / quota
+retire
 ```
 
-A useful analogy is the **management plane** found in conventional infrastructure: not just running workloads, but managing identity, deployment, policy, observability, recovery, versioning, cost, and retirement across a fleet.
+This is a separate problem from the Runtime ABI. A runtime can be excellent at executing an agent without being responsible for the agent's complete lifecycle, just as a workload runtime does not automatically become a fleet management system.
 
-One of the open questions for this project is whether this missing layer could become an **Agent Management Plane** analogous in role—not in implementation—to the way Kubernetes, Vercel, or Datadog became important control surfaces for conventional software.
+---
 
-A scheduled task is only one trigger in this larger system:
+## What exists in the ecosystem
+
+The architecture is intentionally grounded in existing systems rather than invented in isolation.
+
+| Layer | Representative examples | What they demonstrate |
+|---|---|---|
+| Agent applications | Manus, Perplexity Computer, ChatGPT Agent, Claude Cowork | Long-running general-purpose work |
+| Agent runtimes / harnesses | DeepSeek Harness, Claude Code, Codex, OpenCode, Pi | Agent execution models and harness abstractions |
+| Runtime infrastructure | Cloudflare Agents and similar systems | Durable state, scheduling, sandboxing, persistent execution |
+| Enterprise management | Microsoft Copilot Studio, Salesforce Agentforce | Identity, governance, deployment, enterprise integrations |
+
+No single system is currently treated here as the definitive implementation of the full architecture.
+
+The purpose of oh-my-agentX is to identify the interfaces between these categories.
+
+---
+
+## Research questions
+
+The project is now organized around a small set of architectural questions:
+
+1. **Agent Definition:** What is the minimum portable representation of an agent?
+2. **Runtime ABI:** What contract allows multiple substantially different runtimes to execute that definition?
+3. **State portability:** Which parts of session, memory, task, and learned state can move between runtimes?
+4. **Capability negotiation:** How does an agent declare requirements and discover what a runtime can provide?
+5. **Lifecycle Contract:** What management interface is needed for long-lived agents?
+6. **Event model:** Which semantic events need to cross runtime, client, and management boundaries?
+7. **Identity and policy:** How should ownership, credentials, permissions, and governance survive runtime changes?
+8. **Evaluation and recovery:** How can an agent be continuously evaluated and recovered when degraded or stuck?
+9. **Versioning and evolution:** How can an agent be updated without destroying state or violating policy?
+10. **Fleet model:** What is the right abstraction for managing one agent versus thousands of related agents?
+
+---
+
+## What this project is — and is not
+
+oh-my-agentX is **not** trying to become another monolithic coding agent.
+
+It is also not currently claiming to define an industry standard.
+
+Instead, it is a research project for finding the smallest useful open architecture through concrete experiments:
 
 ```text
-Schedule / Webhook / Email / Calendar / Price change / GitHub event / User message
-                                  │
-                                  ▼
-                             Wake Agent
-                                  │
-                                  ▼
-                            Runtime + State
-                                  │
-                           Observe / Decide
-                                  │
-                       ┌──────────┴──────────┐
-                       ▼                     ▼
-                     Act                  Notify
+Agent Definition
+       ↓
+Runtime ABI
+       ↓
+Multiple Runtime Adapters
+       ↓
+Lifecycle Contract
+       ↓
+Management experiments
 ```
 
-See [Agent Lifecycle and Management Plane](docs/agent-lifecycle.md) for the current research hypothesis and open questions.
+The implementation should remain deliberately small until experiments demonstrate that an abstraction is real.
 
-## What we believe today
+The first compelling experiment remains simple:
 
-These are hypotheses, not standards:
+> **Define one agent once, then make that same agent usable in at least two substantially different runtimes.**
 
-1. **The agent should not belong to the harness.** Codex, Claude Code, Pi, OpenCode, and future runtimes should be replaceable execution environments.
-2. **Agent definition and agent state are different things.** Skills and identity are relatively stable; sessions, working memory, tasks, and accumulated state are dynamic.
-3. **The runtime needs a structured event model.** A client should receive semantic events such as model output, tool calls, tool results, permission requests, state changes, and errors—not merely a stream of terminal text.
-4. **Capabilities need explicit contracts.** Services, tools, filesystems, sandboxes, models, and subagents should be describable and negotiable rather than silently assumed.
-5. **The runtime should not dictate the agent philosophy.** A model-driven loop, human-programmed workflow, state machine, planner/executor architecture, or hybrid design should all be possible.
-6. **Portability should be layered.** It may be possible to standardize an agent definition without standardizing every runtime implementation detail.
-7. **We should not reinvent standards that are already emerging.** `AGENTS.md`, Agent Skills, MCP, and related work should be reused or integrated where appropriate.
-8. **Long-lived agents need a lifecycle contract.** Creation, identity, provisioning, deployment, scheduling, observation, recovery, evaluation, update, governance, and retirement are distinct concerns from the moment-to-moment agent loop.
-9. **A management plane may be as important as a runtime ABI.** The long-term interoperability problem may therefore involve both how an agent executes and how its lifecycle is controlled across runtimes.
+The next experiment is harder:
 
-## What this repository is for
+> **Preserve the agent's identity, state, and policy while its runtime changes or its lifecycle continues autonomously.**
 
-This is intentionally a research project first and an implementation project second.
-
-We will use the repository to:
-
-- study existing agent ecosystems and emerging standards
-- map concepts across Codex, Claude Code, OpenCode, Pi, DeepSeek Harness, and others
-- document architectural hypotheses
-- prototype portable agent definitions
-- build small adapters and interoperability experiments
-- identify where a true runtime interface is feasible
-- investigate whether a lifecycle / management interface is also feasible
-- challenge our own assumptions before attempting a formal specification
-
-The first implementation should be small enough to be useful personally. The architecture can grow only when experiments demonstrate that the abstraction is real.
+---
 
 ## Current research documents
 
@@ -234,6 +391,6 @@ The first implementation should be small enough to be useful personally. The arc
 
 ## Status
 
-**Very early research / experimental.**
+**Early research / experimental.**
 
-There is deliberately no claim here that the architecture is complete, correct, or an industry standard. The purpose of this repository is to find out what the smallest useful version of that idea looks like.
+The architecture is intentionally presented as a set of hypotheses. The project will be validated by implementation, interoperability experiments, and comparison with real agent systems rather than by declaring the abstraction correct in advance.
