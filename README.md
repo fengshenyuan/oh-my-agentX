@@ -64,6 +64,8 @@ Potentially includes:
 
 The goal is a **single source of truth** rather than separate copies in `.claude/`, `.codex/`, OpenCode, Pi, and other runtime-specific directories.
 
+The definition should not be interpreted as a frozen list of personas or roles. A persistent agent can expose a broad substrate of capabilities, knowledge, memory, preferences, and reusable methods; the runtime may dynamically compose a task-specific cognitive configuration from that substrate and the current context.
+
 ### 2. Agent Runtime — *How does the agent execute?*
 
 The execution substrate between an agent definition and the underlying model and environment.
@@ -81,8 +83,11 @@ A runtime may own:
 - event streams
 - capability discovery and negotiation
 - background execution
+- **dynamic intelligence composition and scheduling**
 
 The runtime is **not** the model API. A model API exposes intelligence; a runtime determines how an agent observes, reasons, acts, persists state, and interacts with its environment.
+
+Dynamic intelligence composition and scheduling should be treated as runtime capabilities rather than as a replacement for the Agent OS architecture. Composition concerns **what cognitive configuration is assembled for the current task**; scheduling concerns **which heterogeneous intelligence resources are allocated to that configuration, when, for how much computation, and when to stop**. See [Dynamic Intelligence Composition](docs/intelligence-scheduling-composition/dynamic-composition.md) and the broader [Intelligence Scheduling / Composition](docs/intelligence-scheduling-composition/conclusions.md) research.
 
 The key research question here is the **Runtime ABI**:
 
@@ -393,6 +398,8 @@ The project intentionally keeps both its current model and the reasoning that pr
 - [Current vision and architecture](docs/vision.md)
 - [DeepSeek Harness observations](docs/deepseek-harness.md)
 - [Agent Lifecycle and Management Plane](docs/agent-lifecycle.md)
+- [Intelligence Scheduling / Composition](docs/intelligence-scheduling-composition/conclusions.md)
+- [Dynamic Intelligence Composition](docs/intelligence-scheduling-composition/dynamic-composition.md)
 
 ## Status
 
