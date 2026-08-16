@@ -1,6 +1,6 @@
 # Vision and Architecture
 
-**Status: Current research vision — 2026-08-15**
+**Status: Current research vision — 2026-08-16**
 
 This document describes the current architectural model behind **oh-my-agentX** and how it evolved from the project's original portability problem.
 
@@ -58,6 +58,39 @@ The current architecture therefore becomes:
 
 This is the current **canonical architecture** of oh-my-agentX. It remains a research hypothesis rather than an established standard.
 
+### Agent OS theory map
+
+The three-layer architecture provides the stable boundaries. Within the Runtime, intelligence composition and scheduling become related but distinct capabilities:
+
+```text
+                         Agent OS
+                            │
+       ┌────────────────────┼────────────────────┐
+       │                    │                    │
+       ▼                    ▼                    ▼
+Agent Definition      Agent Runtime      Management Plane
+       │                    │                    │
+       │                    │                    │
+persistent substrate       │               lifecycle
+       │                    │                    │
+       │          ┌─────────┴──────────┐         │
+       │          │                    │         │
+       │          ▼                    ▼         │
+       │     Composition          Scheduling     │
+       │          │                    │         │
+       │          └────────┬───────────┘         │
+       │                   ▼                     │
+       │       Dynamic Cognitive Configuration   │
+       │                   │                     │
+       │          ┌────────┼────────┐            │
+       │          ▼        ▼        ▼            │
+       │        Model     Tools   Verifier       │
+       │                                         │
+       └────────────── Runtime ABI ──────────────┘
+```
+
+This map is an explanatory refinement, not a replacement for the canonical three-layer architecture above. **Intelligence Scheduling / Composition is one important Runtime capability, not the project's overall thesis.**
+
 ## 2. Agent Definition
 
 Agent Definition answers:
@@ -83,6 +116,22 @@ authentication bindings
 
 The important property is not the exact manifest syntax. It is that the definition has an identity independent of whichever runtime executes it.
 
+The definition should **not** be interpreted as a frozen catalog of roles or personas. A long-lived agent can expose a broad, persistent substrate of capabilities, knowledge, memory, preferences, and reusable methods; the runtime may dynamically compose a task-specific cognitive configuration from that substrate and the current context. See [Dynamic Intelligence Composition](intelligence-scheduling-composition/dynamic-composition.md).
+
+This distinction is important:
+
+```text
+Persistent Agent Substrate
+    → relatively stable identity, capabilities, knowledge,
+      durable memory, preferences, and reusable methods
+
+Dynamic Cognitive Configuration
+    → task-specific combination of capabilities, context,
+      methods, tools, model resources, reasoning, and verification
+```
+
+A role, persona, or operating mode may emerge from the latter, but it should not be assumed to be a foundational ontology of the Agent OS.
+
 ## 3. Agent Runtime
 
 Agent Runtime answers:
@@ -105,6 +154,8 @@ subagents / orchestration
 event streams
 capability discovery
 background execution
+dynamic intelligence composition
+intelligence scheduling
 ```
 
 Different runtime philosophies should remain possible:
@@ -117,6 +168,43 @@ Hybrid
 ```
 
 The Runtime is not the model API. The model provides intelligence; the runtime determines how that intelligence participates in an agent that observes, reasons, acts, persists state, and interacts with an environment.
+
+### Dynamic intelligence composition and scheduling
+
+Composition and scheduling are closely related, but they answer different questions.
+
+> **Composition:** What cognitive configuration should be assembled for the current task and context?
+>
+> **Scheduling:** Which heterogeneous intelligence resources should that configuration consume, when, for how much computation, with what feedback, and when should the system stop?
+
+A runtime can therefore follow a loop such as:
+
+```text
+Task + Context + Constraints
+             │
+             ▼
+   Dynamic Intelligence Composition
+             │
+             ▼
+   Cognitive Configuration
+             │
+             ▼
+    Intelligence Scheduling
+             │
+      ┌──────┼──────┐
+      ▼      ▼      ▼
+    Model   Tools  Verifier
+             │
+             ▼
+          Evidence
+             │
+             ├── recompose
+             └── continue / stop
+```
+
+The composition need not be fixed at the beginning of a task. New evidence, failed hypotheses, tool results, verification signals, or changing constraints may cause the runtime to recompose the active cognitive configuration and reschedule intelligence resources.
+
+This is an open research area. The project currently treats the full discussion in [Intelligence Scheduling / Composition](intelligence-scheduling-composition/conclusions.md) and [Dynamic Intelligence Composition](intelligence-scheduling-composition/dynamic-composition.md) as research hypotheses rather than protocol commitments.
 
 ### Runtime ABI
 
@@ -171,6 +259,8 @@ Lifecycle State
     degraded
     retired
 ```
+
+Dynamic cognitive configuration is also not the same thing as persistent Agent State. It is a runtime-level composition assembled from relatively stable substrate plus current task state and available resources.
 
 This three-way separation is important for portability. A runtime change should not necessarily require redefining the agent, and updating a definition should not necessarily destroy accumulated state.
 
@@ -366,6 +456,8 @@ If the answer to both is "it shouldn't", then the architecture needs to define t
 2. a Runtime ABI for executing that definition;
 3. a Lifecycle Contract for managing that agent over time.
 
+Intelligence Scheduling / Composition is deliberately **not** a fourth top-level layer. It is a runtime capability that becomes increasingly important as runtimes gain heterogeneous model, tool, verifier, and delegation primitives.
+
 ## 10. Research direction
 
 The project should not attempt to implement a complete Agent OS immediately.
@@ -385,6 +477,24 @@ Instead, the research should proceed through increasingly strong experiments:
           ↓
 6. Test management of multiple agents / a fleet
 ```
+
+The Intelligence Scheduling / Composition work adds a parallel runtime research track:
+
+```text
+1. Characterize heterogeneous intelligence resources
+          ↓
+2. Define a useful persistent intelligence substrate
+          ↓
+3. Experiment with dynamic cognitive configurations
+          ↓
+4. Adapt composition as evidence changes
+          ↓
+5. Allocate compute / tools / verification dynamically
+          ↓
+6. Evaluate quality, cost, latency, reliability, and stopping behavior
+```
+
+These are research tracks, not claims that a final protocol has already been established.
 
 Each step should validate or falsify an abstraction before that abstraction is turned into a formal interface.
 
@@ -431,5 +541,10 @@ The most important unanswered questions are now:
 8. How should continuous evaluation and recovery work?
 9. How can updates preserve state and behavioral continuity?
 10. What is the correct abstraction for one agent versus an agent fleet?
+11. What are the minimum reusable primitives of a persistent intelligence substrate?
+12. How should dynamic cognitive configurations be represented, inspected, and revised?
+13. Which parts of composition should be inferred by the runtime versus explicitly controlled by the user?
+14. How should composition interact with model capability, reasoning effort, delegation, tools, and verification?
+15. What evidence should trigger recomposition, escalation, diversification, or termination?
 
 The project is deliberately not answering these questions prematurely.
